@@ -323,6 +323,7 @@ model Alert {
   params    String   // JSON
   active    Boolean  @default(true)
   createdAt DateTime @default(now())
+  events    AlertEvent[]
 }
 
 // Biomimetic Intelligence (Phase 8)
@@ -350,5 +351,14 @@ model BioMetric {
   modeKey   String?
   name      String
   value     Float
+  createdAt DateTime @default(now())
+}
+
+model AlertEvent {
+  id        String   @id @default(cuid())
+  alertId   String
+  alert     Alert    @relation(fields: [alertId], references: [id], onDelete: Cascade)
+  type      String
+  meta      String?
   createdAt DateTime @default(now())
 }

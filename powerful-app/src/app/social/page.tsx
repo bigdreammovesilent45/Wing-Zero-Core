@@ -8,6 +8,10 @@ export default function SocialPage() {
 	const [perf, setPerf] = useState<any[]>([]);
 	const [leader, setLeader] = useState("demo-strategy");
 	const [scale, setScale] = useState(1);
+	const [alerts, setAlerts] = useState<any[]>([]);
+	const [events, setEvents] = useState<any[]>([]);
+	const [alertType, setAlertType] = useState("pnl_threshold");
+	const [alertParams, setAlertParams] = useState("{\"threshold\": 100, \"direction\": \"above\"}");
 
 	async function refresh() {
 		const s = await fetch("/api/social/subscriptions").then((r) => r.json());
@@ -16,10 +20,21 @@ export default function SocialPage() {
 		setExecs(e.executions ?? []);
 		const p = await fetch("/api/social/performance").then((r) => r.json());
 		setPerf(p.performance ?? []);
+		const al = await fetch("/api/social/alerts").then((r) => r.json());
+		setAlerts(al.alerts ?? []);
+		const ev = await fetch("/api/social/alerts?events=1").then((r) => r.json());
+		setEvents(ev.events ?? []);
 	}
 
 	async function createSub() {
 		await fetch("/api/social/subscriptions", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ leaderStrategyId: leader, scale }) });
+		refresh();
+	}
+
+	async function createAlert() {
+		let params: any = {};
+		try { params = JSON.parse(alertParams); } catch {}
+		await fetch("/api/social/alerts", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ type: alertType, params }) });
 		refresh();
 	}
 
@@ -51,6 +66,34 @@ export default function SocialPage() {
 					<ul className="text-sm">
 						{perf.map((p) => (
 							<li key={p.strategyId}>{p.strategyId}: PnL {p.pnl?.toFixed?.(2)} (W{p.wins}/L{p.losses})</li>
+						))}
+					</ul>
+				</div>
+				<div className="space-y-2 rounded border border-white/10 p-4">
+					<h2 className="text-lg font-semibold">Alerts</h2>
+					<div className="flex items-end gap-2">
+						<label className="text-sm">Type
+							<select className="mt-1 rounded bg-gray-900 px-2 py-1" value={alertType} onChange={(e) => setAlertType(e.target.value)}>
+								<option value="pnl_threshold">PnL Threshold</option>
+								<option value="sentiment_threshold">Sentiment Threshold</option>
+						</select>
+						</label>
+						<label className="text-sm">Params JSON
+							<input className="mt-1 w-72 rounded bg-gray-900 px-2 py-1" value={alertParams} onChange={(e) => setAlertParams(e.target.value)} />
+						</label>
+						<button onClick={createAlert} className="rounded bg-white/10 px-3 py-2 text-sm hover:bg-white/20">Create</button>
+					</div>
+					<ul className="text-sm">
+						{alerts.map((a) => (
+							<li key={a.id}>{a.type} {a.active ? "active" : "inactive"} params {a.params}</li>
+						))}
+					</ul>
+				</div>
+				<div className="space-y-2 rounded border border-white/10 p-4">
+					<h2 className="text-lg font-semibold">Alert Events</h2>
+					<ul className="max-h-48 overflow-auto text-sm">
+						{events.map((e) => (
+							<li key={e.id}>{e.type} {e.meta}</li>
 						))}
 					</ul>
 				</div>
