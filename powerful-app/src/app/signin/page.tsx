@@ -8,6 +8,7 @@ export default function SignInPage() {
 	const router = useRouter();
 	const [email, setEmail] = useState("demo@example.com");
 	const [password, setPassword] = useState("password123");
+	const [otp, setOtp] = useState("");
 	const [loading, setLoading] = useState(false);
 	const [error, setError] = useState<string | null>(null);
 
@@ -19,10 +20,11 @@ export default function SignInPage() {
 			redirect: false,
 			email,
 			password,
+			otp: otp || undefined,
 		});
 		setLoading(false);
 		if (res?.error) {
-			setError("Invalid credentials");
+			setError("Invalid credentials or OTP");
 			return;
 		}
 		router.push("/dashboard");
@@ -50,6 +52,17 @@ export default function SignInPage() {
 						onChange={(e) => setPassword(e.target.value)}
 						type="password"
 						required
+					/>
+				</label>
+				<label className="block">
+					<span className="text-sm text-gray-300">One-time code (if MFA enabled)</span>
+					<input
+						className="mt-1 w-full rounded bg-gray-900 px-3 py-2 outline-none focus:ring-2 focus:ring-white/20"
+						value={otp}
+						onChange={(e) => setOtp(e.target.value)}
+						type="text"
+						inputMode="numeric"
+						placeholder="123456"
 					/>
 				</label>
 				{error && <p className="text-sm text-red-400">{error}</p>}

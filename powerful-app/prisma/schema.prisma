@@ -14,6 +14,9 @@ model User {
   emailVerified DateTime?
   image         String?
   passwordHash  String?
+  role          String   @default("user")
+  mfaEnabled    Boolean  @default(false)
+  mfaSecretEnc  String?
   accounts      Account[]
   sessions      Session[]
   projects      Project[]
@@ -23,6 +26,7 @@ model User {
   sawThresholds SAWThreshold[]
   withdrawals   Withdrawal[]
   chatThreads   ChatThread[]
+  auditLogs     AuditLog[]
   createdAt     DateTime  @default(now())
   updatedAt     DateTime  @updatedAt
 }
@@ -273,4 +277,16 @@ model BacktestRun {
   strategy   String   // e.g. buyhold
   metrics    String?  // JSON
   createdAt  DateTime @default(now())
+}
+
+// Security domain (Phase 4)
+model AuditLog {
+  id        String   @id @default(cuid())
+  userId    String?
+  user      User?    @relation(fields: [userId], references: [id], onDelete: SetNull)
+  action    String
+  route     String?
+  ip        String?
+  meta      String?
+  createdAt DateTime @default(now())
 }
