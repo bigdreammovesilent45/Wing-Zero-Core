@@ -4,6 +4,7 @@ import { engine } from "@/lib/engine";
 import { profiler } from "@/lib/profiler";
 import { ai } from "@/lib/ai";
 import { cache } from "@/lib/cache";
+import { prisma } from "@/lib/prisma";
 
 export const dynamic = "force-dynamic";
 
@@ -14,6 +15,7 @@ export async function GET() {
 	const broker = getBrokerAdapter();
 	await broker.connect();
 	const balance = await broker.getBalance();
+	const bioRecent = await prisma.bioSignal.count({});
 	const payload = {
 		ok: true,
 		timestamp: new Date().toISOString(),
@@ -21,6 +23,7 @@ export async function GET() {
 		market: market.status(),
 		engine: engine.getState(),
 		ai: ai.getState(),
+		bio: { signals: bioRecent },
 		profiler: profiler.metrics().slice(0, 10),
 	};
 	cache.set(key, payload, 5_000);
