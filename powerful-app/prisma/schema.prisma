@@ -28,6 +28,7 @@ model User {
   chatThreads   ChatThread[]
   auditLogs     AuditLog[]
   alerts        Alert[]
+  entitlement   Entitlement?
   createdAt     DateTime  @default(now())
   updatedAt     DateTime  @updatedAt
 }
@@ -361,4 +362,13 @@ model AlertEvent {
   type      String
   meta      String?
   createdAt DateTime @default(now())
+}
+
+model Entitlement {
+  id        String   @id @default(cuid())
+  userId    String   @unique
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  premium   Boolean  @default(false)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 }
