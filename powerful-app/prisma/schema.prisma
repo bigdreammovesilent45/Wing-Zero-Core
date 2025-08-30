@@ -230,3 +230,47 @@ model ChatMessage {
   content   String
   createdAt DateTime   @default(now())
 }
+
+// Finance domain (Phase 3)
+model PriceBar {
+  id        String   @id @default(cuid())
+  symbol    String
+  timeframe String
+  time      DateTime
+  open      Float
+  high      Float
+  low       Float
+  close     Float
+  volume    Float?
+
+  @@unique([symbol, timeframe, time])
+}
+
+model Portfolio {
+  id        String            @id @default(cuid())
+  name      String
+  weights   PortfolioWeight[]
+  createdAt DateTime          @default(now())
+  updatedAt DateTime          @updatedAt
+}
+
+model PortfolioWeight {
+  id          String    @id @default(cuid())
+  portfolioId String
+  symbol      String
+  weight      Float
+  portfolio   Portfolio @relation(fields: [portfolioId], references: [id], onDelete: Cascade)
+
+  @@unique([portfolioId, symbol])
+}
+
+model BacktestRun {
+  id         String   @id @default(cuid())
+  name       String?
+  symbols    String   // CSV
+  timeframe  String
+  lookback   Int
+  strategy   String   // e.g. buyhold
+  metrics    String?  // JSON
+  createdAt  DateTime @default(now())
+}

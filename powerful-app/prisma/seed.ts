@@ -3,6 +3,37 @@ import bcrypt from "bcrypt";
 
 const prisma = new PrismaClient();
 
+async function seedPriceBars() {
+	const symbols = [
+		{ symbol: "EURUSD", start: 1.1 },
+		{ symbol: "BTCUSD", start: 60000 },
+	];
+	const timeframe = "1m";
+	const minutes = 300; // last 300 minutes
+	const now = new Date();
+	for (const { symbol, start } of symbols) {
+		let price = start;
+		for (let m = minutes; m >= 0; m--) {
+			const time = new Date(now.getTime() - m * 60_000);
+			const drift = (Math.random() - 0.5) * (symbol === "EURUSD" ? 0.0006 : 60);
+			const open = price;
+			price = Math.max(0.0001, price + drift);
+			const high = Math.max(open, price) + Math.abs(drift) * 0.2;
+			const low = Math.min(open, price) - Math.abs(drift) * 0.2;
+			const close = price;
+			try {
+				await prisma.priceBar.upsert({
+					where: { symbol_timeframe_time: { symbol, timeframe, time } },
+					create: { symbol, timeframe, time, open, high, low, close, volume: Math.random() * 1000 },
+					update: { open, high, low, close },
+				});
+			} catch {
+				// ignore
+			}
+		}
+	}
+}
+
 async function main() {
 	const email = "demo@example.com";
 	const passwordHash = await bcrypt.hash("password123", 10);
@@ -59,6 +90,8 @@ async function main() {
 			{ title: "Ship MVP", projectId: project.id, assigneeId: user.id },
 		],
 	});
+
+	await seedPriceBars();
 
 	console.log("Seed complete", { user: user.email, strategy: wingZero.name });
 }
