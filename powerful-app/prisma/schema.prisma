@@ -27,6 +27,7 @@ model User {
   withdrawals   Withdrawal[]
   chatThreads   ChatThread[]
   auditLogs     AuditLog[]
+  alerts        Alert[]
   createdAt     DateTime  @default(now())
   updatedAt     DateTime  @updatedAt
 }
@@ -288,5 +289,38 @@ model AuditLog {
   route     String?
   ip        String?
   meta      String?
+  createdAt DateTime @default(now())
+}
+
+// Social/Institutional (Phase 7)
+model CopyTradeSubscription {
+  id               String   @id @default(cuid())
+  leaderStrategyId String
+  followerUserId   String?
+  scale            Float    @default(1.0)
+  active           Boolean  @default(true)
+  createdAt        DateTime @default(now())
+}
+
+model CopyTradeExecution {
+  id               String   @id @default(cuid())
+  subscriptionId   String
+  leaderStrategyId String
+  followerUserId   String?
+  orderId          String
+  symbol           String
+  size             Float
+  pnl              Float?
+  win              Boolean?
+  createdAt        DateTime @default(now())
+}
+
+model Alert {
+  id        String   @id @default(cuid())
+  userId    String?
+  user      User?    @relation(fields: [userId], references: [id], onDelete: SetNull)
+  type      String   // pnl_threshold | sentiment_threshold
+  params    String   // JSON
+  active    Boolean  @default(true)
   createdAt DateTime @default(now())
 }
