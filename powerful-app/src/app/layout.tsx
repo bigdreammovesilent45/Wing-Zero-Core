@@ -1,6 +1,8 @@
 import type { Metadata } from "next";
 import { Inter } from "next/font/google";
+import Link from "next/link";
 import "../styles/globals.css";
+import Toaster from "@/components/Toaster";
 
 const inter = Inter({ subsets: ["latin"] });
 
@@ -12,7 +14,19 @@ export const metadata: Metadata = {
 export default function RootLayout({ children }: { children: React.ReactNode }) {
 	return (
 		<html lang="en" suppressHydrationWarning>
-			<body className={`${inter.className} antialiased`}>{children}</body>
+			<body className={`${inter.className} antialiased`}>
+				<header className="sticky top-0 z-10 border-b border-white/10 bg-black/30 backdrop-blur">
+					<nav className="mx-auto flex max-w-6xl items-center gap-4 p-4 text-sm">
+						<Link href="/" className="font-semibold">Wing Zero</Link>
+						<Link href="/wing-zero" className="text-gray-300 hover:text-white">Bot</Link>
+						<Link href="/saw" className="text-gray-300 hover:text-white">SAW</Link>
+						<Link href="/dashboard" className="text-gray-300 hover:text-white">Dashboard</Link>
+						<Link href="/settings" className="ml-auto text-gray-300 hover:text-white">Settings</Link>
+					</nav>
+				</header>
+				{children}
+				<Toaster />
+			</body>
 		</html>
 	);
 }

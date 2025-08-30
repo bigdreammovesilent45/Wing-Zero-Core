@@ -14,13 +14,16 @@ model User {
   emailVerified DateTime?
   image         String?
   passwordHash  String?
-  // relations
   accounts      Account[]
   sessions      Session[]
   projects      Project[]
   tasks         Task[]    @relation("UserTasks")
-  createdAt     DateTime @default(now())
-  updatedAt     DateTime @updatedAt
+  strategies    Strategy[]
+  accountBalances AccountBalance[]
+  sawThresholds SAWThreshold[]
+  withdrawals   Withdrawal[]
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
 }
 
 model Account {
@@ -57,6 +60,7 @@ model VerificationToken {
   @@unique([identifier, token])
 }
 
+// Existing demo models
 model Project {
   id          String   @id @default(cuid())
   name        String
@@ -80,4 +84,94 @@ model Task {
   assignee    User?    @relation("UserTasks", fields: [assigneeId], references: [id])
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
+}
+
+// Trading domain
+model Strategy {
+  id           String   @id @default(cuid())
+  name         String
+  type         String   // e.g. "WING_ZERO" or "SAW"
+  isActive     Boolean  @default(false)
+  riskConfig   String?  // JSON string
+  filterConfig String?  // JSON string
+  timingConfig String?  // JSON string
+  targetConfig String?  // JSON string
+  ownerId      String?
+  owner        User?    @relation(fields: [ownerId], references: [id], onDelete: SetNull)
+  orders       Order[]
+  trades       Trade[]
+  performances StrategyPerformanceDaily[]
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+}
+
+model Order {
+  id         String   @id @default(cuid())
+  strategyId String
+  symbol     String
+  side       String   // BUY or SELL
+  size       Float
+  price      Float
+  status     String   // NEW, FILLED, PARTIAL, CANCELED
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+  strategy   Strategy @relation(fields: [strategyId], references: [id], onDelete: Cascade)
+  trade      Trade?
+}
+
+model Trade {
+  id          String   @id @default(cuid())
+  orderId     String   @unique
+  strategyId  String
+  entryPrice  Float
+  exitPrice   Float?
+  pnl         Float?
+  win         Boolean?
+  openedAt    DateTime @default(now())
+  closedAt    DateTime?
+  order       Order    @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  strategy    Strategy @relation(fields: [strategyId], references: [id], onDelete: Cascade)
+}
+
+model StrategyPerformanceDaily {
+  id         String   @id @default(cuid())
+  strategyId String
+  date       DateTime
+  trades     Int      @default(0)
+  wins       Int      @default(0)
+  losses     Int      @default(0)
+  pnl        Float    @default(0)
+  strategy   Strategy @relation(fields: [strategyId], references: [id], onDelete: Cascade)
+
+  @@unique([strategyId, date])
+}
+
+model SAWThreshold {
+  id       String   @id @default(cuid())
+  name     String
+  value    Float
+  min      Float?
+  max      Float?
+  ownerId  String?
+  owner    User?    @relation(fields: [ownerId], references: [id], onDelete: SetNull)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model Withdrawal {
+  id        String   @id @default(cuid())
+  amount    Float
+  note      String?
+  ownerId   String?
+  owner     User?    @relation(fields: [ownerId], references: [id], onDelete: SetNull)
+  createdAt DateTime @default(now())
+}
+
+model AccountBalance {
+  id        String   @id @default(cuid())
+  userId    String
+  currency  String   @default("USD")
+  balance   Float    @default(0)
+  updatedAt DateTime @updatedAt
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
 }

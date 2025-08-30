@@ -13,12 +13,37 @@ async function main() {
 		update: {},
 	});
 
-	const project = await prisma.project.create({
-		data: {
-			name: "First Project",
-			description: "Kickstart your powerful app",
-			ownerId: user.id,
-		},
+	await prisma.accountBalance.upsert({
+		where: { id: "demo-balance" },
+		create: { id: "demo-balance", userId: user.id, currency: "USD", balance: 10000 },
+		update: {},
+	});
+
+	const wingZero = await prisma.strategy.upsert({
+		where: { id: "wing-zero" },
+		create: { id: "wing-zero", name: "Wing Zero", type: "WING_ZERO", isActive: false },
+		update: {},
+	});
+
+	await prisma.sAWThreshold.createMany({
+		data: [
+			{ name: "MaxRiskPerTrade", value: 1, ownerId: user.id },
+			{ name: "DailyLossLimit", value: 3, ownerId: user.id },
+			{ name: "MinSignalStrength", value: 0.6, ownerId: user.id },
+		],
+	});
+
+	await prisma.withdrawal.createMany({
+		data: [
+			{ amount: 50, note: "Coffee", ownerId: user.id },
+			{ amount: 120, note: "Tools", ownerId: user.id },
+		],
+	});
+
+	const project = await prisma.project.upsert({
+		where: { id: "proj-1" },
+		create: { id: "proj-1", name: "First Project", description: "Kickstart your powerful app", ownerId: user.id },
+		update: {},
 	});
 
 	await prisma.task.createMany({
@@ -29,7 +54,7 @@ async function main() {
 		],
 	});
 
-	console.log("Seed complete: ", { user: user.email, project: project.name });
+	console.log("Seed complete", { user: user.email, strategy: wingZero.name });
 }
 
 main()
