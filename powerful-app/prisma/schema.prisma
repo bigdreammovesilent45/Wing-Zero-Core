@@ -324,3 +324,31 @@ model Alert {
   active    Boolean  @default(true)
   createdAt DateTime @default(now())
 }
+
+// Biomimetic Intelligence (Phase 8)
+model BioMode {
+  id        String   @id @default(cuid())
+  key       String   @unique
+  label     String
+  config    String   // JSON
+  active    Boolean  @default(false)
+  updatedAt DateTime @updatedAt
+}
+
+model BioSignal {
+  id        String   @id @default(cuid())
+  modeKey   String
+  type      String   // flow | camouflage | mimicry | swarm
+  symbol    String?
+  score     Float?
+  meta      String?
+  createdAt DateTime @default(now())
+}
+
+model BioMetric {
+  id        String   @id @default(cuid())
+  modeKey   String?
+  name      String
+  value     Float
+  createdAt DateTime @default(now())
+}
