@@ -20,6 +20,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
 						<Link href="/" className="font-semibold">Wing Zero</Link>
 						<Link href="/wing-zero" className="text-gray-300 hover:text-white">Bot</Link>
 						<Link href="/saw" className="text-gray-300 hover:text-white">SAW</Link>
+						<Link href="/ai" className="text-gray-300 hover:text-white">AI</Link>
 						<Link href="/dashboard" className="text-gray-300 hover:text-white">Dashboard</Link>
 						<Link href="/settings" className="ml-auto text-gray-300 hover:text-white">Settings</Link>
 					</nav>

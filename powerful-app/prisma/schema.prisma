@@ -175,3 +175,37 @@ model AccountBalance {
   updatedAt DateTime @updatedAt
   user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
 }
+
+// AI Analytics domain (Phase 2)
+model AIConfig {
+  id        String   @id @default(cuid())
+  key       String   @unique
+  value     String   // JSON string
+  updatedAt DateTime @updatedAt
+}
+
+model AIInsight {
+  id        String   @id @default(cuid())
+  kind      String   // sentiment | pattern | risk | optimization
+  symbol    String?
+  score     Float?
+  meta      String?  // JSON string
+  createdAt DateTime @default(now())
+}
+
+model AIPrediction {
+  id            String   @id @default(cuid())
+  symbol        String
+  horizonSec    Int
+  predictedReturn Float
+  confidence    Float
+  createdAt     DateTime @default(now())
+}
+
+model AIRiskScore {
+  id        String   @id @default(cuid())
+  symbol    String?
+  timeframe String
+  score     Float
+  createdAt DateTime @default(now())
+}

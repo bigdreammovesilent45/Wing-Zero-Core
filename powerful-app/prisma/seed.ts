@@ -40,6 +40,12 @@ async function main() {
 		],
 	});
 
+	await prisma.aIConfig.upsert({
+		where: { key: "ai.settings" },
+		create: { key: "ai.settings", value: JSON.stringify({ sensitivity: 1, riskMultiplier: 1 }) },
+		update: { value: JSON.stringify({ sensitivity: 1, riskMultiplier: 1 }) },
+	});
+
 	const project = await prisma.project.upsert({
 		where: { id: "proj-1" },
 		create: { id: "proj-1", name: "First Project", description: "Kickstart your powerful app", ownerId: user.id },
