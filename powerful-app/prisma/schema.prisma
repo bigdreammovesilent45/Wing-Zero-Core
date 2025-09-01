@@ -1,0 +1,374 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id            String   @id @default(cuid())
+  name          String?
+  email         String?  @unique
+  emailVerified DateTime?
+  image         String?
+  passwordHash  String?
+  role          String   @default("user")
+  mfaEnabled    Boolean  @default(false)
+  mfaSecretEnc  String?
+  accounts      Account[]
+  sessions      Session[]
+  projects      Project[]
+  tasks         Task[]    @relation("UserTasks")
+  strategies    Strategy[]
+  accountBalances AccountBalance[]
+  sawThresholds SAWThreshold[]
+  withdrawals   Withdrawal[]
+  chatThreads   ChatThread[]
+  auditLogs     AuditLog[]
+  alerts        Alert[]
+  entitlement   Entitlement?
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+}
+
+model Account {
+  id                String  @id @default(cuid())
+  userId            String
+  type              String
+  provider          String
+  providerAccountId String
+  refresh_token     String?  @map("refresh_token")
+  access_token      String?  @map("access_token")
+  expires_at        Int?     @map("expires_at")
+  token_type        String?  @map("token_type")
+  scope             String?
+  id_token          String?  @map("id_token")
+  session_state     String?
+  user              User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([provider, providerAccountId])
+}
+
+model Session {
+  id           String   @id @default(cuid())
+  sessionToken String   @unique
+  userId       String
+  expires      DateTime
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model VerificationToken {
+  identifier String
+  token      String   @unique
+  expires    DateTime
+
+  @@unique([identifier, token])
+}
+
+// Existing demo models
+model Project {
+  id          String   @id @default(cuid())
+  name        String
+  description String?
+  ownerId     String
+  owner       User     @relation(fields: [ownerId], references: [id], onDelete: Cascade)
+  tasks       Task[]
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
+
+model Task {
+  id          String   @id @default(cuid())
+  title       String
+  description String?
+  status      String   @default("TODO")
+  dueDate     DateTime?
+  projectId   String
+  project     Project  @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  assigneeId  String?
+  assignee    User?    @relation("UserTasks", fields: [assigneeId], references: [id])
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
+
+// Trading domain
+model Strategy {
+  id           String   @id @default(cuid())
+  name         String
+  type         String   // e.g. "WING_ZERO" or "SAW"
+  isActive     Boolean  @default(false)
+  riskConfig   String?  // JSON string
+  filterConfig String?  // JSON string
+  timingConfig String?  // JSON string
+  targetConfig String?  // JSON string
+  ownerId      String?
+  owner        User?    @relation(fields: [ownerId], references: [id], onDelete: SetNull)
+  orders       Order[]
+  trades       Trade[]
+  performances StrategyPerformanceDaily[]
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+}
+
+model Order {
+  id         String   @id @default(cuid())
+  strategyId String
+  symbol     String
+  side       String   // BUY or SELL
+  size       Float
+  price      Float
+  status     String   // NEW, FILLED, PARTIAL, CANCELED
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+  strategy   Strategy @relation(fields: [strategyId], references: [id], onDelete: Cascade)
+  trade      Trade?
+}
+
+model Trade {
+  id          String   @id @default(cuid())
+  orderId     String   @unique
+  strategyId  String
+  entryPrice  Float
+  exitPrice   Float?
+  pnl         Float?
+  win         Boolean?
+  openedAt    DateTime @default(now())
+  closedAt    DateTime?
+  order       Order    @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  strategy    Strategy @relation(fields: [strategyId], references: [id], onDelete: Cascade)
+}
+
+model StrategyPerformanceDaily {
+  id         String   @id @default(cuid())
+  strategyId String
+  date       DateTime
+  trades     Int      @default(0)
+  wins       Int      @default(0)
+  losses     Int      @default(0)
+  pnl        Float    @default(0)
+  strategy   Strategy @relation(fields: [strategyId], references: [id], onDelete: Cascade)
+
+  @@unique([strategyId, date])
+}
+
+model SAWThreshold {
+  id       String   @id @default(cuid())
+  name     String
+  value    Float
+  min      Float?
+  max      Float?
+  ownerId  String?
+  owner    User?    @relation(fields: [ownerId], references: [id], onDelete: SetNull)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model Withdrawal {
+  id        String   @id @default(cuid())
+  amount    Float
+  note      String?
+  ownerId   String?
+  owner     User?    @relation(fields: [ownerId], references: [id], onDelete: SetNull)
+  createdAt DateTime @default(now())
+}
+
+model AccountBalance {
+  id        String   @id @default(cuid())
+  userId    String
+  currency  String   @default("USD")
+  balance   Float    @default(0)
+  updatedAt DateTime @updatedAt
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+// AI Analytics domain (Phase 2)
+model AIConfig {
+  id        String   @id @default(cuid())
+  key       String   @unique
+  value     String   // JSON string
+  updatedAt DateTime @updatedAt
+}
+
+model AIInsight {
+  id        String   @id @default(cuid())
+  kind      String   // sentiment | pattern | risk | optimization
+  symbol    String?
+  score     Float?
+  meta      String?  // JSON string
+  createdAt DateTime @default(now())
+}
+
+model AIPrediction {
+  id            String   @id @default(cuid())
+  symbol        String
+  horizonSec    Int
+  predictedReturn Float
+  confidence    Float
+  createdAt     DateTime @default(now())
+}
+
+model AIRiskScore {
+  id        String   @id @default(cuid())
+  symbol    String?
+  timeframe String
+  score     Float
+  createdAt DateTime @default(now())
+}
+
+// Chat domain
+model ChatThread {
+  id        String        @id @default(cuid())
+  title     String?
+  ownerId   String?
+  owner     User?         @relation(fields: [ownerId], references: [id], onDelete: SetNull)
+  messages  ChatMessage[]
+  createdAt DateTime      @default(now())
+  updatedAt DateTime      @updatedAt
+}
+
+model ChatMessage {
+  id        String     @id @default(cuid())
+  threadId  String
+  thread    ChatThread @relation(fields: [threadId], references: [id], onDelete: Cascade)
+  role      String
+  content   String
+  createdAt DateTime   @default(now())
+}
+
+// Finance domain (Phase 3)
+model PriceBar {
+  id        String   @id @default(cuid())
+  symbol    String
+  timeframe String
+  time      DateTime
+  open      Float
+  high      Float
+  low       Float
+  close     Float
+  volume    Float?
+
+  @@unique([symbol, timeframe, time])
+}
+
+model Portfolio {
+  id        String            @id @default(cuid())
+  name      String
+  weights   PortfolioWeight[]
+  createdAt DateTime          @default(now())
+  updatedAt DateTime          @updatedAt
+}
+
+model PortfolioWeight {
+  id          String    @id @default(cuid())
+  portfolioId String
+  symbol      String
+  weight      Float
+  portfolio   Portfolio @relation(fields: [portfolioId], references: [id], onDelete: Cascade)
+
+  @@unique([portfolioId, symbol])
+}
+
+model BacktestRun {
+  id         String   @id @default(cuid())
+  name       String?
+  symbols    String   // CSV
+  timeframe  String
+  lookback   Int
+  strategy   String   // e.g. buyhold
+  metrics    String?  // JSON
+  createdAt  DateTime @default(now())
+}
+
+// Security domain (Phase 4)
+model AuditLog {
+  id        String   @id @default(cuid())
+  userId    String?
+  user      User?    @relation(fields: [userId], references: [id], onDelete: SetNull)
+  action    String
+  route     String?
+  ip        String?
+  meta      String?
+  createdAt DateTime @default(now())
+}
+
+// Social/Institutional (Phase 7)
+model CopyTradeSubscription {
+  id               String   @id @default(cuid())
+  leaderStrategyId String
+  followerUserId   String?
+  scale            Float    @default(1.0)
+  active           Boolean  @default(true)
+  createdAt        DateTime @default(now())
+}
+
+model CopyTradeExecution {
+  id               String   @id @default(cuid())
+  subscriptionId   String
+  leaderStrategyId String
+  followerUserId   String?
+  orderId          String
+  symbol           String
+  size             Float
+  pnl              Float?
+  win              Boolean?
+  createdAt        DateTime @default(now())
+}
+
+model Alert {
+  id        String   @id @default(cuid())
+  userId    String?
+  user      User?    @relation(fields: [userId], references: [id], onDelete: SetNull)
+  type      String   // pnl_threshold | sentiment_threshold
+  params    String   // JSON
+  active    Boolean  @default(true)
+  createdAt DateTime @default(now())
+  events    AlertEvent[]
+}
+
+// Biomimetic Intelligence (Phase 8)
+model BioMode {
+  id        String   @id @default(cuid())
+  key       String   @unique
+  label     String
+  config    String   // JSON
+  active    Boolean  @default(false)
+  updatedAt DateTime @updatedAt
+}
+
+model BioSignal {
+  id        String   @id @default(cuid())
+  modeKey   String
+  type      String   // flow | camouflage | mimicry | swarm
+  symbol    String?
+  score     Float?
+  meta      String?
+  createdAt DateTime @default(now())
+}
+
+model BioMetric {
+  id        String   @id @default(cuid())
+  modeKey   String?
+  name      String
+  value     Float
+  createdAt DateTime @default(now())
+}
+
+model AlertEvent {
+  id        String   @id @default(cuid())
+  alertId   String
+  alert     Alert    @relation(fields: [alertId], references: [id], onDelete: Cascade)
+  type      String
+  meta      String?
+  createdAt DateTime @default(now())
+}
+
+model Entitlement {
+  id        String   @id @default(cuid())
+  userId    String   @unique
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  premium   Boolean  @default(false)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}

@@ -1,0 +1,33 @@
+app = "powerful-app"
+primary_region = "iad"
+
+[build]
+
+[env]
+  NODE_ENV = "production"
+
+[[services]]
+  internal_port = 3000
+  protocol = "tcp"
+  [services.concurrency]
+    type = "requests"
+    soft_limit = 50
+    hard_limit = 100
+
+  [[services.ports]]
+    handlers = ["http"]
+    port = 80
+  [[services.ports]]
+    handlers = ["tls", "http"]
+    port = 443
+
+  [[services.http_checks]]
+    interval = "15s"
+    method = "get"
+    path = "/api/health"
+    protocol = "http"
+    timeout = "2s"
+
+  [[services.tcp_checks]]
+    interval = "15s"
+    timeout = "2s"
